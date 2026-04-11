@@ -1,0 +1,46 @@
+# yinv — first-run placeholder invoice
+#
+# Every field below is a placeholder. Replace each one with your real values,
+# save, then run `yinv render <path>` to generate the PDF.
+
+client: YourClient              # must match the client subdir name
+invoice_number: "000001"        # zero-padded string
+service_month: "2026-01"        # YYYY-MM — "which month is this invoice for"
+date_of_issue: 2026-01-31       # last day of service month
+due_date: 2026-02-15            # 15th of month after service month
+
+billed_to:
+  name: YOUR CLIENT NAME
+  address:
+    - Street line 1
+    - City, State ZIP
+
+from:
+  name: YOUR NAME
+  address:
+    - Street line 1
+    - City, Region
+    - "00000"
+
+purchase_order: null
+
+line_items:
+  - description: Consulting fees for January 2026
+    unit_cost: 0
+    qty: 1
+
+terms: Thank you!
+tax_rate: 0
+shipping: 0
+currency: USD
+
+bank_details:
+  name: YOUR NAME
+  account_number: "0000000000"
+  account_type: Checking
+  routing_number: "000000000"
+  swift_bic: TESTUS00
+  bank_name: Your Bank
+  bank_address:
+    - 1 Bank Plaza
+    - City, State ZIP

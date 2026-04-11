@@ -1,0 +1,51 @@
+# yinv — fully synthetic invoice fixture.
+#
+# Every value here is fake placeholder data. This file is safe to commit,
+# render, and share publicly. It exists so tests and the synthetic render
+# smoke test can exercise every schema field without ever touching real
+# invoice data.
+
+client: Acme
+invoice_number: "000007"
+service_month: "2026-04"
+date_of_issue: 2026-04-30
+due_date: 2026-05-15
+
+billed_to:
+  name: Acme Corp
+  address:
+    - 123 Example Ave
+    - Somewhere, CA 90000
+
+from:
+  name: Jane Doe
+  address:
+    - 45 Placeholder St
+    - Anytown
+    - "00000"
+
+purchase_order: null
+
+line_items:
+  - description: Consulting fees for April 2026
+    unit_cost: 6000
+    qty: 1
+  - description: Tech Allowance April 2026
+    unit_cost: 50
+    qty: 1
+
+terms: Thank you!
+tax_rate: 0
+shipping: 0
+currency: USD
+
+bank_details:
+  name: Jane Doe
+  account_number: "0000000000"
+  account_type: Checking
+  routing_number: "000000000"
+  swift_bic: TESTUS00
+  bank_name: Test Bank
+  bank_address:
+    - 1 Bank Plaza
+    - Anytown, 00000

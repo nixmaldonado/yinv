@@ -1,0 +1,28 @@
+# Python build artifacts
+dist/
+build/
+*.egg-info/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+
+# Privacy: never commit real invoice data or generated PDFs
+# from any stray local runs at the repo root.
+/*.pdf
+/*.yaml
+/invoices/
