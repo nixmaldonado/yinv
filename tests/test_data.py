@@ -18,6 +18,8 @@ from yinv.data import (
     target_path_for_service_month,
     validate_invoice,
 )
+from yinv.cli import _bootstrap_first_invoice
+from yinv.config import Config
 
 
 # --------------------------------------------------------------------------
@@ -380,6 +382,24 @@ class TestSeedTemplate:
         # Contract: user must be able to eyeball the placeholders
         blob = yaml.safe_dump(seed)
         assert "YOUR NAME" in blob or "Your Name" in blob
+
+
+class TestBootstrapFirstInvoice:
+    def test_sets_seed_line_item_month_to_target_month(self, tmp_path, monkeypatch):
+        cdir = tmp_path / "Invoices" / "Acme"
+        config = Config(tmp_path / "config.toml")
+        args = type("Args", (), {"force": False})()
+
+        monkeypatch.setattr("yinv.cli._open_in_editor", lambda path, config: None)
+
+        exit_code = _bootstrap_first_invoice(args, cdir, "Acme", (2026, 4), config)
+
+        assert exit_code == 0
+        invoice = load_invoice(cdir / "2026" / "April2026.yaml")
+        assert (
+            invoice["line_items"][0]["description"]
+            == "Consulting fees for April 2026"
+        )
 
 
 # --------------------------------------------------------------------------

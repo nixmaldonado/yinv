@@ -21,6 +21,7 @@ from yinv.data import (
     load_invoice,
     load_seed_template,
     save_invoice,
+    substitute_month_tokens,
     target_path_for_service_month,
     validate_invoice,
 )
@@ -29,6 +30,7 @@ from yinv.dates import (
     due_date_for_service_month,
     format_service_month,
     last_day_of_service_month,
+    month_name,
     next_service_month,
     parse_service_month,
 )
@@ -219,9 +221,20 @@ def _bootstrap_first_invoice(
 
     seed = load_seed_template()
     seed["client"] = client
+    seed_source_sm = parse_service_month(seed["service_month"])
     seed["service_month"] = format_service_month(target_sm)
     seed["date_of_issue"] = last_day_of_service_month(target_sm)
     seed["due_date"] = due_date_for_service_month(target_sm)
+    src_month_name = month_name(seed_source_sm[1])
+    src_year = seed_source_sm[0]
+    dst_month_name = month_name(target_sm[1])
+    dst_year = target_sm[0]
+    for item in seed["line_items"]:
+        description = item.get("description")
+        if isinstance(description, str):
+            item["description"] = substitute_month_tokens(
+                description, src_month_name, src_year, dst_month_name, dst_year
+            )
     save_invoice(seed, target_path)
 
     _open_in_editor(target_path, config)
