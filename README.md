@@ -3,12 +3,13 @@
 CLI to generate monthly consulting invoices as PDFs. You edit a YAML draft in
 your `$EDITOR`, save, and get a PDF that matches a consistent template.
 
-## Install (dev)
+## Install
 
 ```sh
-brew install pango gdk-pixbuf libffi
-uv tool install .   # or: pipx install .
+brew tap nixmaldonado/yinv
+brew install -v yinv
 ```
+First install can take a couple of minutes so use -v to see it's actually progressing.
 
 ## Configure
 
@@ -92,6 +93,18 @@ the new month's PDF automatically after a successful editor exit.
 
 Nothing else. No database, no index file. Add another client tomorrow by
 creating another subdir.
+
+### Configuration keys
+
+| Key | Default | Description |
+|---|---|---|
+| `invoices.dir` | — | Parent directory containing one subdir per client. |
+| `client.default` | — | Client subdirectory to use when running `yinv new`. |
+| `editor` | `$VISUAL` / `$EDITOR` / `vi` | Command used to open YAML drafts for editing. |
+| `currency` | `USD` | Currency code used in invoices. |
+| `invoice_number.width` | `6` | Minimum zero-padded width for invoice numbers. |
+
+Config is stored in `~/.config/yinv/config.toml`.
 
 ## License
 

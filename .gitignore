@@ -26,3 +26,8 @@ env/
 /*.pdf
 /*.yaml
 /invoices/
+RELEASING.md
+
+# homebrew formulae
+/homebrew-yinv/
+
