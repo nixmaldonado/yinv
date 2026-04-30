@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from yinv import __version__
-from yinv.config import Config, UnknownConfigKey
+from yinv.config import Config, UnknownConfigKey, format_known_keys
 from yinv.data import (
     ValidationError,
     client_dir,
@@ -62,12 +62,28 @@ def build_parser() -> argparse.ArgumentParser:
     render_cmd = sub.add_parser("render", help="Render one YAML file to PDF.")
     render_cmd.add_argument("yaml_path", type=Path)
 
-    cfg = sub.add_parser("config", help="Read or write a config value.")
+    config_epilog = format_known_keys()
+    cfg = sub.add_parser(
+        "config",
+        help="Read or write a config value.",
+        epilog=config_epilog,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     cfg_sub = cfg.add_subparsers(dest="config_action", required=True)
-    cfg_set = cfg_sub.add_parser("set", help="Write a config key.")
+    cfg_set = cfg_sub.add_parser(
+        "set",
+        help="Write a config key.",
+        epilog=config_epilog,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     cfg_set.add_argument("key")
     cfg_set.add_argument("value")
-    cfg_get = cfg_sub.add_parser("get", help="Read a config key.")
+    cfg_get = cfg_sub.add_parser(
+        "get",
+        help="Read a config key.",
+        epilog=config_epilog,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     cfg_get.add_argument("key")
 
     return parser

@@ -25,16 +25,53 @@ class _KeySpec:
 
     default: Any
     coerce: type | None = None  # if set, values are coerced through this callable
+    description: str = ""
 
 
 # Whitelisted keys. Adding a new key here is how we grow the config surface.
 _KEYS: dict[str, _KeySpec] = {
-    "invoices.dir": _KeySpec(default=None, coerce=str),
-    "client.default": _KeySpec(default=None, coerce=str),
-    "editor": _KeySpec(default=None, coerce=str),
-    "currency": _KeySpec(default="USD", coerce=str),
-    "invoice_number.width": _KeySpec(default=6, coerce=int),
+    "invoices.dir": _KeySpec(
+        default=None,
+        coerce=str,
+        description="Parent directory containing one subdir per client.",
+    ),
+    "client.default": _KeySpec(
+        default=None,
+        coerce=str,
+        description="Client subdirectory to use when running `yinv new`.",
+    ),
+    "editor": _KeySpec(
+        default=None,
+        coerce=str,
+        description="Command used to open YAML drafts (default: $VISUAL / $EDITOR / vi).",
+    ),
+    "currency": _KeySpec(
+        default="USD",
+        coerce=str,
+        description="Currency code used in invoices (default: USD).",
+    ),
+    "invoice_number.width": _KeySpec(
+        default=6,
+        coerce=int,
+        description="Minimum zero-padded width for invoice numbers (default: 6).",
+    ),
 }
+
+
+def format_known_keys() -> str:
+    """Return a multi-line, human-readable listing of known config keys.
+
+    Used as the ``--help`` epilog for the ``config`` subcommands so users
+    can discover which keys are actually configurable without leaving the
+    terminal.
+    """
+    width = max(len(k) for k in _KEYS)
+    lines = ["Configurable keys:"]
+    for key, spec in _KEYS.items():
+        lines.append(f"  {key:<{width}}  {spec.description}")
+    lines.append("")
+    lines.append(f"Config file: {default_config_path()}")
+    return "\n".join(lines)
 
 
 def default_config_path() -> Path:
