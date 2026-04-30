@@ -189,6 +189,13 @@ def _cmd_new(args: argparse.Namespace) -> int:
     edited = load_invoice(target_path)
     validate_invoice(edited)
 
+    # The user may have edited service_month — let the YAML's date win over the
+    # auto-incremented filename, so the PDF is named for the month the user
+    # actually billed for.
+    target_path = _reconcile_path_with_service_month(
+        target_path, edited, cdir, force=args.force
+    )
+
     # Render the PDF.
     from yinv.render import render  # noqa: PLC0415
 
@@ -246,6 +253,35 @@ def _bootstrap_first_invoice(
         "Next month, run 'yinv new' to fork from it."
     )
     return 0
+
+
+def _reconcile_path_with_service_month(
+    current_path: Path,
+    invoice: dict[str, Any],
+    cdir: Path,
+    *,
+    force: bool,
+) -> Path:
+    """Move ``current_path`` to the canonical path for ``invoice['service_month']``.
+
+    Returns the (possibly new) path of the YAML on disk. No-op if the YAML's
+    service_month already matches its filename. With ``force=False``, refuses
+    to overwrite an existing file at the destination and leaves the YAML in
+    place.
+    """
+    edited_sm = parse_service_month(invoice["service_month"])
+    canonical_path = target_path_for_service_month(cdir, edited_sm)
+    if canonical_path == current_path:
+        return current_path
+    if canonical_path.exists() and not force:
+        raise _UserError(
+            f"service_month was edited to {invoice['service_month']!r}, but "
+            f"{canonical_path} already exists (pass --force to overwrite). "
+            f"YAML left at {current_path}."
+        )
+    canonical_path.parent.mkdir(parents=True, exist_ok=True)
+    current_path.replace(canonical_path)
+    return canonical_path
 
 
 def _parse_optional_month(value: str | None) -> ServiceMonth | None:

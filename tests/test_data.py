@@ -18,7 +18,11 @@ from yinv.data import (
     target_path_for_service_month,
     validate_invoice,
 )
-from yinv.cli import _bootstrap_first_invoice
+from yinv.cli import (
+    _bootstrap_first_invoice,
+    _reconcile_path_with_service_month,
+    _UserError,
+)
 from yinv.config import Config
 
 
@@ -400,6 +404,95 @@ class TestBootstrapFirstInvoice:
             invoice["line_items"][0]["description"]
             == "Consulting fees for April 2026"
         )
+
+
+class TestReconcilePathWithServiceMonth:
+    """The YAML's service_month — not the auto-incremented filename — wins."""
+
+    def test_noop_when_service_month_matches_path(self, tmp_path):
+        cdir = tmp_path / "Invoices" / "Acme"
+        path = cdir / "2026" / "April2026.yaml"
+        _write(path, _base_invoice(service_month="2026-04"))
+        invoice = load_invoice(path)
+
+        result = _reconcile_path_with_service_month(
+            path, invoice, cdir, force=False
+        )
+
+        assert result == path
+        assert path.exists()
+
+    def test_renames_yaml_when_user_edits_service_month(self, tmp_path):
+        # Simulates the reported bug: yinv auto-incremented June → July, but
+        # the user edited service_month to 2026-04 in the editor.
+        cdir = tmp_path / "Invoices" / "Acme"
+        july_path = cdir / "2026" / "July2026.yaml"
+        edited = _base_invoice(
+            service_month="2026-04",
+            date_of_issue=date(2026, 4, 30),
+            due_date=date(2026, 5, 15),
+        )
+        _write(july_path, edited)
+
+        result = _reconcile_path_with_service_month(
+            july_path, edited, cdir, force=False
+        )
+
+        assert result == cdir / "2026" / "April2026.yaml"
+        assert result.exists()
+        assert not july_path.exists()
+
+    def test_rename_across_year_boundaries(self, tmp_path):
+        cdir = tmp_path / "Invoices" / "Acme"
+        jan2027_path = cdir / "2027" / "January2027.yaml"
+        edited = _base_invoice(
+            service_month="2026-12",
+            date_of_issue=date(2026, 12, 31),
+            due_date=date(2027, 1, 15),
+        )
+        _write(jan2027_path, edited)
+
+        result = _reconcile_path_with_service_month(
+            jan2027_path, edited, cdir, force=False
+        )
+
+        assert result == cdir / "2026" / "December2026.yaml"
+        assert result.exists()
+        assert not jan2027_path.exists()
+
+    def test_refuses_to_overwrite_existing_without_force(self, tmp_path):
+        cdir = tmp_path / "Invoices" / "Acme"
+        july_path = cdir / "2026" / "July2026.yaml"
+        april_path = cdir / "2026" / "April2026.yaml"
+        edited = _base_invoice(service_month="2026-04")
+        _write(july_path, edited)
+        _write(april_path, _base_invoice(service_month="2026-04"))
+
+        with pytest.raises(_UserError, match="already exists"):
+            _reconcile_path_with_service_month(
+                july_path, edited, cdir, force=False
+            )
+
+        # YAML left at the original path so the user can recover.
+        assert july_path.exists()
+
+    def test_overwrites_existing_with_force(self, tmp_path):
+        cdir = tmp_path / "Invoices" / "Acme"
+        july_path = cdir / "2026" / "July2026.yaml"
+        april_path = cdir / "2026" / "April2026.yaml"
+        edited = _base_invoice(
+            invoice_number="000099", service_month="2026-04"
+        )
+        _write(july_path, edited)
+        _write(april_path, _base_invoice(invoice_number="000001"))
+
+        result = _reconcile_path_with_service_month(
+            july_path, edited, cdir, force=True
+        )
+
+        assert result == april_path
+        assert not july_path.exists()
+        assert load_invoice(april_path)["invoice_number"] == "000099"
 
 
 # --------------------------------------------------------------------------
