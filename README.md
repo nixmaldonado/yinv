@@ -72,14 +72,33 @@ Writes a fresh PDF next to the YAML. Useful after manually editing a YAML.
 This is mainly for re-rendering an existing invoice; `yinv new` already renders
 the new month's PDF automatically after a successful editor exit.
 
+## AI-driven workflow
+
+`yinv` ships with a portable AI skill that lets you drive the same workflow
+from an agent ("generate May's invoice for Acme", "add a tech allowance
+line", "re-render the PDF"). For Claude Code, install it with:
+
+```sh
+yinv skill install
+```
+
+That copies the bundled skill to `~/.claude/skills/yinv/SKILL.md`. For other
+agents, use `--dest <path>` or `--print` to redirect to wherever your tool
+expects skills to live.
+
+The skill calls `yinv new --no-edit --client <name>` instead of the
+interactive flow, then edits the YAML and runs `yinv render` once you've
+confirmed the changes look right.
+
 ## Commands (v0.1)
 
 | Command | Purpose |
 |---|---|
-| `yinv new [--month YYYY-MM] [--force]` | First-run bootstrap or monthly fork. |
+| `yinv new [--month YYYY-MM] [--client NAME] [--force] [--no-edit]` | First-run bootstrap or monthly fork. `--no-edit` skips `$EDITOR` and auto-render (useful for agents). |
 | `yinv render <file.yaml>` | Render one YAML to PDF. |
 | `yinv config set <key> <value>` | Write a config key. |
 | `yinv config get <key>` | Read a config key. |
+| `yinv skill install [--dest PATH] [--print] [--force]` | Install the bundled AI skill (default: `~/.claude/skills/yinv/`). |
 
 ## Data layout
 

@@ -392,7 +392,7 @@ class TestBootstrapFirstInvoice:
     def test_sets_seed_line_item_month_to_target_month(self, tmp_path, monkeypatch):
         cdir = tmp_path / "Invoices" / "Acme"
         config = Config(tmp_path / "config.toml")
-        args = type("Args", (), {"force": False})()
+        args = type("Args", (), {"force": False, "no_edit": False})()
 
         monkeypatch.setattr("yinv.cli._open_in_editor", lambda path, config: None)
 

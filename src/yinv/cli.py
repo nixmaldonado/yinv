@@ -58,9 +58,47 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Overwrite an existing target YAML/PDF.",
     )
+    new.add_argument(
+        "--client",
+        metavar="NAME",
+        help="Client subdir override for this command (default: config client.default).",
+    )
+    new.add_argument(
+        "--no-edit",
+        action="store_true",
+        help="Skip opening $EDITOR and skip auto-rendering the PDF. "
+        "Writes the YAML and exits — useful for agents and scripting.",
+    )
 
     render_cmd = sub.add_parser("render", help="Render one YAML file to PDF.")
     render_cmd.add_argument("yaml_path", type=Path)
+
+    skill = sub.add_parser(
+        "skill",
+        help="Manage the bundled AI skill file.",
+    )
+    skill_sub = skill.add_subparsers(dest="skill_action", required=True)
+    skill_install = skill_sub.add_parser(
+        "install",
+        help="Install the bundled skill (default: ~/.claude/skills/yinv/SKILL.md).",
+    )
+    skill_install.add_argument(
+        "--dest",
+        type=Path,
+        help="Destination path. Directory => writes SKILL.md inside; "
+        "*.md => writes to that exact file. Default: ~/.claude/skills/yinv/SKILL.md.",
+    )
+    skill_install.add_argument(
+        "--print",
+        action="store_true",
+        dest="print_only",
+        help="Write the skill content to stdout instead of installing it.",
+    )
+    skill_install.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite an existing destination file.",
+    )
 
     config_epilog = format_known_keys()
     cfg = sub.add_parser(
@@ -100,6 +138,8 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_render(args)
         if args.command == "config":
             return _cmd_config(args)
+        if args.command == "skill":
+            return _cmd_skill(args)
     except _UserError as exc:
         print(f"yinv: {exc}", file=sys.stderr)
         return exc.exit_code
@@ -145,6 +185,46 @@ def _cmd_config(args: argparse.Namespace) -> int:
     return 2  # unreachable — argparse enforces a subcommand
 
 
+def _cmd_skill(args: argparse.Namespace) -> int:
+    if args.skill_action == "install":
+        return _cmd_skill_install(args)
+    return 2  # unreachable — argparse enforces a subcommand
+
+
+def _default_skill_dest() -> Path:
+    return Path.home() / ".claude" / "skills" / "yinv" / "SKILL.md"
+
+
+def _cmd_skill_install(args: argparse.Namespace) -> int:
+    from importlib import resources  # noqa: PLC0415
+
+    ref = resources.files("yinv").joinpath("skill", "SKILL.md")
+    content = ref.read_text(encoding="utf-8")
+
+    if args.print_only:
+        sys.stdout.write(content)
+        return 0
+
+    if args.dest is None:
+        dest = _default_skill_dest()
+    else:
+        dest = Path(args.dest).expanduser()
+        # Treat *.md as the exact destination file; anything else as a directory.
+        if dest.suffix != ".md":
+            dest = dest / "SKILL.md"
+
+    if dest.exists() and not args.force:
+        raise _UserError(
+            f"{dest} already exists (pass --force to overwrite).",
+            exit_code=1,
+        )
+
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(content, encoding="utf-8")
+    print(f"installed skill to {dest}")
+    return 0
+
+
 def _cmd_render(args: argparse.Namespace) -> int:
     # Import render lazily so `yinv --help` / `yinv config` don't need WeasyPrint.
     from yinv.render import render  # noqa: PLC0415
@@ -165,7 +245,7 @@ def _cmd_render(args: argparse.Namespace) -> int:
 def _cmd_new(args: argparse.Namespace) -> int:
     config = Config()
     invoices_dir = config.get("invoices.dir")
-    client = config.get("client.default")
+    client = args.client or config.get("client.default")
     if not invoices_dir:
         raise _UserError(
             "invoices.dir is not set. Run: "
@@ -174,7 +254,8 @@ def _cmd_new(args: argparse.Namespace) -> int:
     if not client:
         raise _UserError(
             "client.default is not set. Run: "
-            "yinv config set client.default <your-client-subdir-name>"
+            "yinv config set client.default <your-client-subdir-name>, "
+            "or pass --client <name>."
         )
 
     width = int(config.get("invoice_number.width") or 6)
@@ -199,6 +280,10 @@ def _cmd_new(args: argparse.Namespace) -> int:
 
     forked = fork_next(source, target_sm, width)
     save_invoice(forked, target_path)
+
+    if args.no_edit:
+        print(f"wrote {target_path}")
+        return 0
 
     _open_in_editor(target_path, config)
 
@@ -259,6 +344,10 @@ def _bootstrap_first_invoice(
                 description, src_month_name, src_year, dst_month_name, dst_year
             )
     save_invoice(seed, target_path)
+
+    if args.no_edit:
+        print(f"wrote {target_path}")
+        return 0
 
     _open_in_editor(target_path, config)
 

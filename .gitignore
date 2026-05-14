@@ -31,3 +31,9 @@ RELEASING.md
 # homebrew formulae
 /homebrew-yinv/
 
+# Local agent/session state
+.claude/
+
+# Local design notes
+docs/
+
