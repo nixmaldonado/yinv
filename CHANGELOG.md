@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-05-15
+
+### Added
+- `yinv skill install`: installs the bundled AI skill to
+  `~/.claude/skills/yinv/SKILL.md` by default. `--dest <path>` redirects to
+  an arbitrary file or directory; `--print` writes the skill to stdout
+  instead; `--force` overwrites an existing file.
+- `yinv new --no-edit`: writes the YAML without opening `$EDITOR` and skips
+  the auto-render step — meant for agents and scripting.
+- `yinv new --client NAME`: per-invocation override for the default client.
+- Bundled `src/yinv/skill/SKILL.md` describing the AI-driven workflow.
+
 ## [0.1.1] - 2026-04-30
 
 ### Fixed
