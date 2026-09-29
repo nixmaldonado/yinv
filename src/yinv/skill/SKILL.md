@@ -161,6 +161,7 @@ The forked YAML has this shape (types in parens):
 | `billed_to.address` | list of strings | Each entry is one printed line. |
 | `from.name` | string | Your name. |
 | `from.address` | list of strings | Each entry is one printed line. |
+| `from.email` | string or null | Optional. Printed under your address. |
 | `purchase_order` | string or null | Optional. |
 | `line_items[]` | list of mappings | At least one required. Each has `description`, `unit_cost` (numeric), `qty` (numeric). |
 | `terms` | string | Free text shown on the invoice. |

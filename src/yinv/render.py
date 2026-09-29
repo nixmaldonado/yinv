@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import calendar
 from datetime import date
 from decimal import Decimal
 from importlib import resources
@@ -11,23 +12,31 @@ from typing import Any
 from jinja2 import Environment, StrictUndefined
 
 from yinv.data import load_invoice, validate_invoice
+from yinv.dates import last_day_of_service_month, parse_service_month
 
 
-# Minor: currency symbol map for the grand-total line ("US$ 6,050").
-# Unknown codes fall back to the bare code + space.
+# Symbols for line-item and subtotal amounts ("$1,250.00"). Totals always use
+# the ISO code instead ("USD 1,250.00"). Unknown codes fall back to code + space.
 _CURRENCY_SYMBOLS = {
-    "USD": "US$",
-    "EUR": "EU€",
+    "USD": "$",
+    "EUR": "€",
     "GBP": "£",
     "ARS": "AR$",
 }
 
 
 def _format_date(value: date) -> str:
-    """``dd/mm/yyyy`` to match the existing template."""
+    """``Sep 30, 2026`` — month spelled out so day/month order can't be misread."""
     if not isinstance(value, date):
         raise TypeError(f"expected date, got {type(value).__name__}")
-    return f"{value.day:02d}/{value.month:02d}/{value.year:04d}"
+    return f"{calendar.month_abbr[value.month]} {value.day}, {value.year}"
+
+
+def _format_service_period(service_month: str) -> str:
+    """``Sep 1 – 30, 2026`` for a ``YYYY-MM`` service month."""
+    year, month = parse_service_month(service_month)
+    last = last_day_of_service_month((year, month)).day
+    return f"{calendar.month_abbr[month]} 1 – {last}, {year}"
 
 
 def _format_number(value: int | float) -> str:
@@ -39,11 +48,12 @@ def _format_number(value: int | float) -> str:
     return f"{value:,.2f}"
 
 
-def _format_currency(value: int | float, currency: str, with_code: bool = False) -> str:
-    """``$ 6,050`` for summary lines, ``US$ 6,050`` for the grand-total line."""
-    symbol = _CURRENCY_SYMBOLS.get(currency, currency + " ")
-    prefix = symbol if with_code else "$"
-    return f"{prefix} {_format_number(value)}"
+def _format_money(value: int | float, currency: str, with_code: bool = False) -> str:
+    """``$1,250.00`` for amounts, ``USD 1,250.00`` for totals (``with_code``)."""
+    if isinstance(value, bool):
+        raise TypeError("bool is not a valid amount")
+    prefix = f"{currency} " if with_code else _CURRENCY_SYMBOLS.get(currency, currency + " ")
+    return f"{prefix}{value:,.2f}"
 
 
 def _compute_totals(invoice: dict[str, Any]) -> tuple[float, float, float]:
@@ -98,8 +108,9 @@ def render_html(invoice: dict[str, Any]) -> str:
         tax=tax,
         total=total,
         format_date=_format_date,
+        format_service_period=_format_service_period,
         format_number=_format_number,
-        format_currency=_format_currency,
+        format_money=_format_money,
     )
     # Inline the stylesheet so WeasyPrint doesn't need base_url resolution.
     html = html.replace(

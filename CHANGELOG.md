@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Optional `from.email` field, printed under your address in the header.
+
+### Changed
+- Redesigned PDF layout: issuer masthead, highlighted amount due, service
+  period, ruled line-item table, and bank details as a label/value grid.
+  Footer shows the invoice number and page count.
+- Dates render as `Sep 30, 2026` instead of `30/09/2026` so day/month order
+  can't be misread.
+- Amounts always show cents (`$1,250.00`); totals use the ISO code
+  (`USD 1,250.00`) instead of `US$`.
+- Tax, shipping and purchase-order rows are hidden when zero or empty.
+- `terms` renders as a closing note without a heading, and only when set.
+
 ## [0.1.2] - 2026-05-15
 
 ### Added

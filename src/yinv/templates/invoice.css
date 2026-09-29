@@ -1,179 +1,195 @@
-/* yinv invoice stylesheet — mimics the existing PDF template. */
+/* yinv invoice stylesheet. */
 
 @page {
   size: Letter;
-  margin: 0.75in 0.85in;
+  margin: 0.8in 0.85in 0.9in;
+
+  @bottom-left {
+    content: element(footer);
+  }
+
+  @bottom-right {
+    content: "Page " counter(page) " of " counter(pages);
+    font: 7.5pt "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+    color: #8a94a0;
+  }
+}
+
+:root {
+  --ink: #1d2733;
+  --muted: #6b7684;
+  --rule: #dfe3e8;
+  --accent: #1f4e79;
+  --tint: #f3f6f9;
 }
 
 body {
-  font-family: "Helvetica", "Arial", sans-serif;
-  font-size: 10pt;
-  color: #222;
-  line-height: 1.35;
+  font-family: "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+  font-size: 9.5pt;
+  line-height: 1.45;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
 }
 
-.label {
-  color: #6f7b86;
-  font-weight: 700;
-  font-size: 8pt;
-  letter-spacing: 0.02em;
+.label,
+dt,
+th {
+  font-size: 7pt;
+  font-weight: 600;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  margin-bottom: 2pt;
+  color: var(--muted);
 }
 
-.value {
-  color: #222;
-}
+.strong { font-weight: 600; }
+.muted { color: var(--muted); }
+.num { text-align: right; white-space: nowrap; }
 
-/* --- Title ------------------------------------------------------------ */
+/* --- Masthead: issuer + document id ----------------------------------- */
 
-h1.title {
-  font-size: 28pt;
-  font-weight: 800;
-  color: #4b5d6e;
-  margin: 0 0 18pt 0;
-}
-
-/* --- Meta row: invoice number / issue / due --------------------------- */
-
-.meta {
+.masthead {
   display: flex;
-  gap: 20pt;
-  margin-bottom: 14pt;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-bottom: 16pt;
+  border-bottom: 2pt solid var(--accent);
+  color: var(--muted);
 }
 
-.meta-col {
-  flex: 1;
+.issuer-name {
+  font-size: 15pt;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 3pt;
 }
 
-/* --- Parties: billed to / from / PO ----------------------------------- */
+.doc-id { text-align: right; }
 
-.parties {
+.doc-type {
+  font-size: 24pt;
+  font-weight: 300;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.doc-number {
+  margin-top: 6pt;
+  font-size: 10pt;
+  color: var(--ink);
+}
+
+/* --- Overview: bill to / dates / amount due --------------------------- */
+
+.overview {
   display: flex;
-  gap: 20pt;
-  margin-bottom: 24pt;
+  gap: 24pt;
+  margin: 22pt 0 26pt;
 }
 
-.party {
+.bill-to { flex: 1.1; }
+.bill-to .label { margin-bottom: 4pt; }
+
+.facts { flex: 1; margin: 0; }
+.facts > div { margin-bottom: 7pt; }
+.facts dd { margin: 1pt 0 0; }
+
+.amount-due {
   flex: 1;
+  background: var(--tint);
+  border-left: 2pt solid var(--accent);
+  padding: 10pt 12pt;
 }
 
-.party .value {
-  margin-bottom: 1pt;
+.amount-due .amount {
+  font-size: 17pt;
+  font-weight: 600;
+  margin: 3pt 0 1pt;
+}
+
+.amount-due .by {
+  color: var(--muted);
+  font-size: 8.5pt;
 }
 
 /* --- Line items ------------------------------------------------------- */
 
-.line-items {
-  background: #eff2f5;
-  padding: 16pt 14pt 18pt 14pt;
-  margin: 0 -14pt;
-}
-
-.line-items table {
+table {
   width: 100%;
   border-collapse: collapse;
 }
 
-.line-items th {
-  font-size: 8pt;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-  color: #6f7b86;
-  font-weight: 700;
+.items th {
   text-align: left;
-  padding-bottom: 10pt;
-  border-bottom: 0;
+  padding: 0 0 6pt;
+  border-bottom: 1pt solid var(--ink);
 }
 
-.line-items th.unit-cost,
-.line-items th.qty,
-.line-items th.amount,
-.line-items td.unit-cost,
-.line-items td.qty,
-.line-items td.amount {
-  text-align: right;
+.items th.num { text-align: right; }
+
+.items th:not(:first-child),
+.items td:not(:first-child) {
+  width: 16%;
 }
 
-.line-items td {
-  padding: 6pt 0;
-  vertical-align: top;
+.items td {
+  padding: 9pt 0;
+  border-bottom: 0.75pt solid var(--rule);
 }
 
-.line-items tbody tr:last-child td {
-  border-bottom: 1px solid #c9d1d9;
+/* --- Totals ----------------------------------------------------------- */
+
+.totals {
+  width: 42%;
+  margin: 10pt 0 0 auto;
 }
 
-/* --- Summary (terms + totals breakdown) ------------------------------- */
+.totals td { padding: 4pt 0; }
+.totals td:first-child { color: var(--muted); }
 
-.summary {
+.totals .grand td {
+  padding-top: 8pt;
+  border-top: 1pt solid var(--ink);
+  font-size: 11.5pt;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* --- Payment details + closing note ----------------------------------- */
+
+.payment {
   display: flex;
-  gap: 24pt;
-  margin-top: 18pt;
-  padding: 0 14pt;
-}
-
-.summary .terms {
-  flex: 1;
-}
-
-.summary .totals {
-  width: 40%;
-}
-
-.summary .totals .row {
-  display: flex;
-  justify-content: space-between;
-  padding: 2pt 0;
-}
-
-.summary .totals .label {
-  margin-bottom: 0;
-}
-
-.summary .totals .value {
-  font-variant-numeric: tabular-nums;
-}
-
-/* --- Grand total ------------------------------------------------------ */
-
-.total {
-  padding: 18pt 14pt 0 14pt;
-}
-
-.total .row {
-  display: flex;
-  justify-content: flex-end;
-  gap: 14pt;
-  align-items: baseline;
-}
-
-.total .label {
-  font-size: 8pt;
-  margin-bottom: 0;
-}
-
-.total .value {
-  font-weight: 800;
-  font-size: 12pt;
-  color: #222;
-  font-variant-numeric: tabular-nums;
-}
-
-/* --- Bank details ----------------------------------------------------- */
-
-.bank {
+  gap: 28pt;
   margin-top: 40pt;
+  padding-top: 16pt;
+  border-top: 0.75pt solid var(--rule);
+  break-inside: avoid;
 }
 
-.bank .label {
-  margin-bottom: 6pt;
+.bank { flex: 1.6; }
+.bank .label { margin-bottom: 8pt; }
+
+.grid {
+  display: grid;
+  grid-template-columns: 1.4in 1fr;
+  row-gap: 4pt;
+  margin: 0;
 }
 
-.bank .value {
-  margin-bottom: 1pt;
+.grid dt { padding-top: 1.5pt; }
+.grid dd { margin: 0; letter-spacing: 0.03em; }
+
+.terms {
+  flex: 1;
+  padding-top: 17pt;
+  color: var(--muted);
 }
 
-.bank .value.indent {
-  /* align continuation lines with "Bank name and address:" value */
+/* --- Running footer --------------------------------------------------- */
+
+footer {
+  position: running(footer);
+  font-size: 7.5pt;
+  color: #8a94a0;
 }

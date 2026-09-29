@@ -135,6 +135,10 @@ def validate_invoice(invoice: Any) -> None:
         if not isinstance(addr, list) or not addr:
             raise ValidationError(f"{section}.address must be a non-empty list")
 
+    email = invoice["from"].get("email")
+    if email is not None and (not isinstance(email, str) or not email):
+        raise ValidationError("from.email must be a non-empty string or null")
+
     if not isinstance(invoice["bank_details"]["bank_address"], list):
         raise ValidationError("bank_details.bank_address must be a list")
 

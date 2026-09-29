@@ -2,118 +2,100 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Invoice {{ invoice.invoice_number }}</title>
+<title>Invoice {{ invoice.invoice_number }} · {{ invoice["from"].name }}</title>
+<meta name="author" content="{{ invoice['from'].name }}">
 <link rel="stylesheet" href="invoice.css">
 </head>
 <body>
 
-<h1 class="title">Invoice</h1>
-
-<section class="meta">
-  <div class="meta-col">
-    <div class="label">INVOICE NUMBER</div>
-    <div class="value">{{ invoice.invoice_number }}</div>
-  </div>
-  <div class="meta-col">
-    <div class="label">DATE OF ISSUE</div>
-    <div class="value">{{ format_date(invoice.date_of_issue) }}</div>
-  </div>
-  <div class="meta-col">
-    <div class="label">DUE DATE</div>
-    <div class="value">{{ format_date(invoice.due_date) }}</div>
-  </div>
-</section>
-
-<section class="parties">
-  <div class="party">
-    <div class="label">BILLED TO</div>
-    <div class="value">{{ invoice.billed_to.name }}</div>
-    {% for line in invoice.billed_to.address %}
-    <div class="value">{{ line }}</div>
-    {% endfor %}
-  </div>
-  <div class="party">
-    <div class="label">FROM</div>
-    <div class="value">{{ invoice["from"].name }}</div>
+<header class="masthead">
+  <div class="issuer">
+    <div class="issuer-name">{{ invoice["from"].name }}</div>
     {% for line in invoice["from"].address %}
-    <div class="value">{{ line }}</div>
+    <div>{{ line }}</div>
     {% endfor %}
-  </div>
-  <div class="party">
-    <div class="label">PURCHASE ORDER</div>
-    {% if invoice.purchase_order %}
-    <div class="value">{{ invoice.purchase_order }}</div>
+    {% if invoice["from"].get("email") %}
+    <div>{{ invoice["from"].email }}</div>
     {% endif %}
   </div>
-</section>
-
-<section class="line-items">
-  <table>
-    <thead>
-      <tr>
-        <th class="description">Description</th>
-        <th class="unit-cost">Unit cost</th>
-        <th class="qty">QTY</th>
-        <th class="amount">Amount</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for item in invoice.line_items %}
-      <tr>
-        <td class="description">{{ item.description }}</td>
-        <td class="unit-cost">{{ format_number(item.unit_cost) }}</td>
-        <td class="qty">{{ format_number(item.qty) }}</td>
-        <td class="amount">{{ format_number(item.unit_cost * item.qty) }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</section>
-
-<section class="summary">
-  <div class="terms">
-    <div class="label">TERMS</div>
-    <div class="value">{{ invoice.terms }}</div>
+  <div class="doc-id">
+    <div class="doc-type">Invoice</div>
+    <div class="doc-number">No. {{ invoice.invoice_number }}</div>
   </div>
-  <div class="totals">
-    <div class="row">
-      <span class="label">SUBTOTAL</span>
-      <span class="value">{{ format_currency(subtotal, invoice.currency) }}</span>
-    </div>
-    <div class="row">
-      <span class="label">(TAX RATE)</span>
-      <span class="value">{{ format_number(invoice.tax_rate) }} %</span>
-    </div>
-    <div class="row">
-      <span class="label">TAX</span>
-      <span class="value">{{ format_currency(tax, invoice.currency) }}</span>
-    </div>
-    <div class="row">
-      <span class="label">SHIPPING</span>
-      <span class="value">{{ format_currency(invoice.shipping, invoice.currency) }}</span>
-    </div>
+</header>
+
+<section class="overview">
+  <div class="bill-to">
+    <div class="label">Bill to</div>
+    <div class="strong">{{ invoice.billed_to.name }}</div>
+    {% for line in invoice.billed_to.address %}
+    <div>{{ line }}</div>
+    {% endfor %}
+  </div>
+  <dl class="facts">
+    <div><dt>Issued</dt><dd>{{ format_date(invoice.date_of_issue) }}</dd></div>
+    <div><dt>Due</dt><dd>{{ format_date(invoice.due_date) }}</dd></div>
+    <div><dt>Service period</dt><dd>{{ format_service_period(invoice.service_month) }}</dd></div>
+    {% if invoice.get("purchase_order") %}
+    <div><dt>PO number</dt><dd>{{ invoice.purchase_order }}</dd></div>
+    {% endif %}
+  </dl>
+  <div class="amount-due">
+    <div class="label">Amount due</div>
+    <div class="amount">{{ format_money(total, invoice.currency, with_code=True) }}</div>
+    <div class="by">by {{ format_date(invoice.due_date) }}</div>
   </div>
 </section>
 
-<section class="total">
-  <div class="row">
-    <span class="label">INVOICE TOTAL</span>
-    <span class="value">{{ format_currency(total, invoice.currency, with_code=True) }}</span>
+<table class="items">
+  <thead>
+    <tr>
+      <th>Description</th>
+      <th class="num">Qty</th>
+      <th class="num">Rate</th>
+      <th class="num">Amount</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in invoice.line_items %}
+    <tr>
+      <td>{{ item.description }}</td>
+      <td class="num">{{ format_number(item.qty) }}</td>
+      <td class="num">{{ format_money(item.unit_cost, invoice.currency) }}</td>
+      <td class="num">{{ format_money(item.unit_cost * item.qty, invoice.currency) }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<table class="totals">
+  <tr><td>Subtotal</td><td class="num">{{ format_money(subtotal, invoice.currency) }}</td></tr>
+  {% if invoice.tax_rate %}
+  <tr><td>Tax ({{ format_number(invoice.tax_rate) }}%)</td><td class="num">{{ format_money(tax, invoice.currency) }}</td></tr>
+  {% endif %}
+  {% if invoice.shipping %}
+  <tr><td>Shipping</td><td class="num">{{ format_money(invoice.shipping, invoice.currency) }}</td></tr>
+  {% endif %}
+  <tr class="grand"><td>Total due</td><td class="num">{{ format_money(total, invoice.currency, with_code=True) }}</td></tr>
+</table>
+
+<section class="payment">
+  <div class="bank">
+    <div class="label">Payment details</div>
+    <dl class="grid">
+      <dt>Beneficiary</dt><dd>{{ invoice.bank_details.name }}</dd>
+      <dt>Bank</dt><dd>{{ invoice.bank_details.bank_name }}<br>{{ invoice.bank_details.bank_address | join(", ") }}</dd>
+      <dt>Account number</dt><dd>{{ invoice.bank_details.account_number }} <span class="muted">({{ invoice.bank_details.account_type }})</span></dd>
+      <dt>Routing (ACH &amp; wire)</dt><dd>{{ invoice.bank_details.routing_number }}</dd>
+      <dt>SWIFT / BIC</dt><dd>{{ invoice.bank_details.swift_bic }}</dd>
+    </dl>
   </div>
+  {% if invoice.terms %}
+  <div class="terms">{{ invoice.terms }}</div>
+  {% endif %}
 </section>
 
-<section class="bank">
-  <div class="label">BANK ACCOUNT DETAILS</div>
-  <div class="value">Name: {{ invoice.bank_details.name }}</div>
-  <div class="value">Account number: {{ invoice.bank_details.account_number }}</div>
-  <div class="value">Account type: {{ invoice.bank_details.account_type }}</div>
-  <div class="value">Routing number (for wire and ACH): {{ invoice.bank_details.routing_number }}</div>
-  <div class="value">Swift/BIC: {{ invoice.bank_details.swift_bic }}</div>
-  <div class="value">Bank name and address: {{ invoice.bank_details.bank_name }},</div>
-  {% for line in invoice.bank_details.bank_address %}
-  <div class="value indent">{{ line }}</div>
-  {% endfor %}
-</section>
+<footer>{{ invoice["from"].name }} · Invoice {{ invoice.invoice_number }}</footer>
 
 </body>
 </html>

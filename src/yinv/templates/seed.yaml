@@ -21,6 +21,7 @@ from:
     - Street line 1
     - City, Region
     - "00000"
+  email: null                   # optional, printed under your address
 
 purchase_order: null
 
