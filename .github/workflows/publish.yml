@@ -1,5 +1,6 @@
 # Publishes to PyPI when a v* tag is pushed, using PyPI Trusted Publishing
-# (OIDC) — no API token is stored anywhere.
+# (OIDC) — no API token is stored anywhere — then creates the GitHub release
+# with that version's CHANGELOG.md section as its notes.
 #
 # One-time PyPI setup: https://pypi.org/manage/project/yinv/settings/publishing/
 #   Owner: nixmaldonado · Repository: yinv · Workflow: publish.yml · Environment: pypi
@@ -28,6 +29,10 @@ jobs:
             exit 1
           fi
 
+      - name: Check CHANGELOG has notes for this version
+        run: |
+          .github/scripts/release-notes.sh "${GITHUB_REF_NAME#v}" > /dev/null
+
       - name: Test
         run: |
           pip install -e ".[dev]"
@@ -54,3 +59,19 @@ jobs:
           path: dist/
 
       - uses: pypa/gh-action-pypi-publish@release/v1
+
+  release:
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create GitHub release from CHANGELOG
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          .github/scripts/release-notes.sh "$version" > notes.md
+          gh release create "$GITHUB_REF_NAME" --verify-tag --title "$GITHUB_REF_NAME" --notes-file notes.md
